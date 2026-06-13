@@ -247,6 +247,54 @@ const blocks = {
   red:  { el: document.getElementById('red'),  scoreEl: document.getElementById('redScore'),  value: 0 }
 };
 
+// 音效合成
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSoundUp() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.08);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.15);
+}
+
+function playSoundDown() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(660, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(330, audioCtx.currentTime + 0.15);
+  gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.2);
+}
+
+function playSoundReset() {
+  // 两声下降音，模拟重置
+  [0, 0.12].forEach((delay) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(1000, audioCtx.currentTime + delay);
+    osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + delay + 0.2);
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + 0.25);
+    osc.start(audioCtx.currentTime + delay);
+    osc.stop(audioCtx.currentTime + delay + 0.25);
+  });
+}
+
 // 获取进度环元素
 blocks.blue.ring = blocks.blue.el.querySelector('.progress-ring');
 blocks.red.ring  = blocks.red.el.querySelector('.progress-ring');
@@ -463,6 +511,7 @@ function setupBlock(key) {
       blocks.red.scoreEl.textContent = '0';
       animateReset(blocks.blue.el, blocks.blue.scoreEl);
       animateReset(blocks.red.el, blocks.red.scoreEl);
+      playSoundReset();
     }, LONG_PRESS_MS);
   }
 
@@ -496,6 +545,7 @@ function setupBlock(key) {
         block.value++;
         block.scoreEl.textContent = block.value;
         animateScoreUp(block.el, block.scoreEl, lastPos.x, lastPos.y);
+        playSoundUp();
         clickCount = 0;
       }, 250);
     } else if (clickCount === 2) {
@@ -503,6 +553,7 @@ function setupBlock(key) {
       block.value = Math.max(0, block.value - 1);
       block.scoreEl.textContent = block.value;
       animateScoreDown(block.el, block.scoreEl, lastPos.x, lastPos.y);
+      playSoundDown();
       clickCount = 0;
     }
   }
