@@ -6,17 +6,13 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <!-- 羽毛球 -->
   <g transform="translate(256,256) rotate(-30)">
-    <!-- 球头 -->
     <ellipse cx="0" cy="80" rx="42" ry="42" fill="#fff"/>
-    <!-- 羽毛裙 -->
     <path d="M-38,40 L-60,-80 Q0,-100 60,-80 L38,40 Z" fill="#fff" opacity="0.9"/>
-    <!-- 羽毛纹理 -->
-    <line x1="-30,40" y1="40" x2="-50,-70" y2="-70" stroke="rgba(0,122,255,0.3)" stroke-width="3"/>
-    <line x1="-15,40" y1="40" x2="-25,-80" y2="-80" stroke="rgba(0,122,255,0.3)" stroke-width="3"/>
-    <line x1="0,40" y1="40" x2="0,-90" y2="-90" stroke="rgba(0,122,255,0.3)" stroke-width="3"/>
-    <line x1="15,40" y1="40" x2="25,-80" y2="-80" stroke="rgba(0,122,255,0.3)" stroke-width="3"/>
-    <line x1="30,40" y1="40" x2="50,-70" y2="-70" stroke="rgba(0,122,255,0.3)" stroke-width="3"/>
+    <line x1="-30" y1="40" x2="-50" y2="-70" stroke="rgba(0,122,255,0.3)" stroke-width="3"/>
+    <line x1="-15" y1="40" x2="-25" y2="-80" stroke="rgba(0,122,255,0.3)" stroke-width="3"/>
+    <line x1="0" y1="40" x2="0" y2="-90" stroke="rgba(0,122,255,0.3)" stroke-width="3"/>
+    <line x1="15" y1="40" x2="25" y2="-80" stroke="rgba(0,122,255,0.3)" stroke-width="3"/>
+    <line x1="30" y1="40" x2="50" y2="-70" stroke="rgba(0,122,255,0.3)" stroke-width="3"/>
   </g>
 </svg>
