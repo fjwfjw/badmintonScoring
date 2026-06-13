@@ -25,125 +25,484 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: opacity 0.1s;
-  }
-  .score-block:active {
-    opacity: 0.85;
+    position: relative;
+    overflow: hidden;
   }
   .blue { background-color: #007AFF; }
   .red  { background-color: #FF3B30; }
+  .score-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
   .score {
     font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
     font-size: 72px;
     font-weight: 700;
     color: #fff;
     line-height: 1;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+
+  /* 得分弹跳动画 */
+  @keyframes scorePop {
+    0%   { transform: scale(1); }
+    20%  { transform: scale(1.5); }
+    40%  { transform: scale(0.9); }
+    60%  { transform: scale(1.15); }
+    80%  { transform: scale(0.97); }
+    100% { transform: scale(1); }
+  }
+  .score-pop {
+    animation: scorePop 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* 减分挤压动画 */
+  @keyframes scoreSqueeze {
+    0%   { transform: scaleX(1) scaleY(1); }
+    15%  { transform: scaleX(0.5) scaleY(1.3); }
+    30%  { transform: scaleX(1.4) scaleY(0.8); }
+    45%  { transform: scaleX(0.85) scaleY(1.1); }
+    60%  { transform: scaleX(1.1) scaleY(0.95); }
+    75%  { transform: scaleX(0.97) scaleY(1.02); }
+    100% { transform: scaleX(1) scaleY(1); }
+  }
+  .score-squeeze {
+    animation: scoreSqueeze 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* 色块冲击波 */
+  @keyframes ripple {
+    0% { transform: scale(0); opacity: 0.6; }
+    100% { transform: scale(4); opacity: 0; }
+  }
+  .ripple {
+    position: absolute;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    pointer-events: none;
+    z-index: 1;
+    animation: ripple 0.5s ease-out forwards;
+  }
+
+  /* +1/-1 浮动文字 */
+  @keyframes floatUp {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-50px) scale(1.3); }
+  }
+  .float-text {
+    position: absolute;
+    font-family: -apple-system, "SF Pro Display", sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    pointer-events: none;
+    z-index: 3;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    animation: floatUp 0.7s ease-out forwards;
+  }
+
+  /* 粒子 */
+  @keyframes particle {
+    0%   { opacity: 1; transform: translate(0, 0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(0); }
+  }
+  .particle {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    pointer-events: none;
+    z-index: 3;
+    animation: particle 0.6s ease-out forwards;
+  }
+
+  /* 火花粒子（减分用） */
+  @keyframes spark {
+    0%   { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(0) rotate(180deg); }
+  }
+  .spark {
+    position: absolute;
+    width: 4px; height: 12px;
+    border-radius: 2px;
+    background: #FFD60A;
+    pointer-events: none;
+    z-index: 3;
+    animation: spark 0.5s ease-out forwards;
+  }
+
+  /* 重置闪光 */
+  @keyframes resetFlash {
+    0%   { opacity: 0; }
+    30%  { opacity: 0.6; }
+    100% { opacity: 0; }
+  }
+  .reset-flash {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    pointer-events: none;
+    z-index: 5;
+    animation: resetFlash 0.4s ease-out forwards;
+  }
+
+  /* 色块按压效果 */
+  @keyframes blockPulse {
+    0%   { filter: brightness(1); }
+    50%  { filter: brightness(0.85); }
+    100% { filter: brightness(1); }
+  }
+  .block-pulse {
+    animation: blockPulse 0.15s ease-out;
+  }
+
+  /* 长按进度环 */
+  .progress-ring {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .progress-ring.active {
+    opacity: 1;
+  }
+  .progress-ring circle {
+    fill: none;
+    stroke-linecap: round;
+  }
+  .progress-ring .ring-bg {
+    stroke: rgba(255,255,255,0.2);
+  }
+  .progress-ring .ring-fg {
+    stroke: #fff;
+    transition: stroke-dashoffset 0.05s linear;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.6));
+  }
+
+  /* 进度环完成时脉冲 */
+  @keyframes ringPulse {
+    0%   { transform: scale(1); opacity: 1; }
+    50%  { transform: scale(1.3); opacity: 0.6; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+  .ring-pulse {
+    position: absolute;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    pointer-events: none;
+    z-index: 2;
+    animation: ringPulse 0.4s ease-out forwards;
   }
 </style>
 </head>
 <body>
 <div class="scoreboard">
   <div class="score-block blue" id="blue">
-    <span class="score" id="blueScore">0</span>
+    <div class="score-wrapper">
+      <svg class="progress-ring" width="120" height="120" viewBox="0 0 120 120">
+        <circle class="ring-bg" cx="60" cy="60" r="52" stroke-width="6"/>
+        <circle class="ring-fg" cx="60" cy="60" r="52" stroke-width="6"
+          stroke-dasharray="326.73" stroke-dashoffset="326.73"
+          transform="rotate(-90 60 60)"/>
+      </svg>
+      <span class="score" id="blueScore">0</span>
+    </div>
   </div>
   <div class="score-block red" id="red">
-    <span class="score" id="redScore">0</span>
+    <div class="score-wrapper">
+      <svg class="progress-ring" width="120" height="120" viewBox="0 0 120 120">
+        <circle class="ring-bg" cx="60" cy="60" r="52" stroke-width="6"/>
+        <circle class="ring-fg" cx="60" cy="60" r="52" stroke-width="6"
+          stroke-dasharray="326.73" stroke-dashoffset="326.73"
+          transform="rotate(-90 60 60)"/>
+      </svg>
+      <span class="score" id="redScore">0</span>
+    </div>
   </div>
 </div>
 
 <script>
+const CIRCUMFERENCE = 2 * Math.PI * 52; // ~326.73
+const LONG_PRESS_MS = 800;
+
 const blocks = {
   blue: { el: document.getElementById('blue'), scoreEl: document.getElementById('blueScore'), value: 0 },
   red:  { el: document.getElementById('red'),  scoreEl: document.getElementById('redScore'),  value: 0 }
 };
 
-const LONG_PRESS_MS = 500;
+// 获取进度环元素
+blocks.blue.ring = blocks.blue.el.querySelector('.progress-ring');
+blocks.red.ring  = blocks.red.el.querySelector('.progress-ring');
+blocks.blue.ringFg = blocks.blue.ring.querySelector('.ring-fg');
+blocks.red.ringFg  = blocks.red.ring.querySelector('.ring-fg');
+
+// 创建冲击波
+function createRipple(block, x, y) {
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple';
+  ripple.style.left = (x - 30) + 'px';
+  ripple.style.top = (y - 30) + 'px';
+  block.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+}
+
+// 创建浮动文字
+function createFloatText(block, text, x, y) {
+  const el = document.createElement('div');
+  el.className = 'float-text';
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  block.appendChild(el);
+  setTimeout(() => el.remove(), 700);
+}
+
+// 创建粒子爆发
+function createParticles(block, x, y, count) {
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.5;
+    const dist = 30 + Math.random() * 50;
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    p.style.setProperty('--px', Math.cos(angle) * dist + 'px');
+    p.style.setProperty('--py', Math.sin(angle) * dist + 'px');
+    p.style.width = (4 + Math.random() * 6) + 'px';
+    p.style.height = p.style.width;
+    block.appendChild(p);
+    setTimeout(() => p.remove(), 600);
+  }
+}
+
+// 创建火花（减分用）
+function createSparks(block, x, y, count) {
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('div');
+    s.className = 'spark';
+    const angle = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.8;
+    const dist = 20 + Math.random() * 40;
+    s.style.left = x + 'px';
+    s.style.top = y + 'px';
+    s.style.setProperty('--px', Math.cos(angle) * dist + 'px');
+    s.style.setProperty('--py', Math.sin(angle) * dist + 'px');
+    s.style.transform = `rotate(${Math.random() * 360}deg)`;
+    block.appendChild(s);
+    setTimeout(() => s.remove(), 500);
+  }
+}
+
+// 重置闪光
+function createResetFlash(block) {
+  const flash = document.createElement('div');
+  flash.className = 'reset-flash';
+  block.appendChild(flash);
+  setTimeout(() => flash.remove(), 400);
+}
+
+// 进度环脉冲
+function createRingPulse(block) {
+  const wrapper = block.querySelector('.score-wrapper');
+  const rect = wrapper.getBoundingClientRect();
+  const blockRect = block.getBoundingClientRect();
+  const cx = rect.left - blockRect.left + rect.width / 2;
+  const cy = rect.top - blockRect.top + rect.height / 2;
+  const pulse = document.createElement('div');
+  pulse.className = 'ring-pulse';
+  pulse.style.width = '120px';
+  pulse.style.height = '120px';
+  pulse.style.left = (cx - 60) + 'px';
+  pulse.style.top = (cy - 60) + 'px';
+  block.appendChild(pulse);
+  setTimeout(() => pulse.remove(), 400);
+}
+
+// 色块按压脉冲
+function triggerBlockPulse(block) {
+  block.classList.remove('block-pulse');
+  void block.offsetWidth;
+  block.classList.add('block-pulse');
+  setTimeout(() => block.classList.remove('block-pulse'), 150);
+}
+
+// 得分动画
+function animateScoreUp(block, scoreEl, x, y) {
+  scoreEl.classList.remove('score-pop');
+  void scoreEl.offsetWidth;
+  scoreEl.classList.add('score-pop');
+  createRipple(block, x, y);
+  createFloatText(block, '+1', x - 15, y - 40);
+  createParticles(block, x, y, 8);
+  triggerBlockPulse(block);
+  setTimeout(() => scoreEl.classList.remove('score-pop'), 400);
+}
+
+// 减分动画：挤压 + 火花
+function animateScoreDown(block, scoreEl, x, y) {
+  scoreEl.classList.remove('score-squeeze');
+  void scoreEl.offsetWidth;
+  scoreEl.classList.add('score-squeeze');
+  createFloatText(block, '-1', x - 12, y - 40);
+  createSparks(block, x, y, 6);
+  setTimeout(() => scoreEl.classList.remove('score-squeeze'), 500);
+}
+
+// 重置动画
+function animateReset(block, scoreEl) {
+  scoreEl.classList.remove('score-squeeze');
+  void scoreEl.offsetWidth;
+  scoreEl.classList.add('score-squeeze');
+  createResetFlash(block);
+  createRingPulse(block);
+  setTimeout(() => scoreEl.classList.remove('score-squeeze'), 500);
+}
+
+// 进度环控制
+function startProgress(block) {
+  block.ring.classList.add('active');
+  block.ringFg.style.strokeDashoffset = CIRCUMFERENCE;
+  block._progressStart = Date.now();
+  block._progressRaf = requestAnimationFrame(function tick() {
+    const elapsed = Date.now() - block._progressStart;
+    const progress = Math.min(elapsed / LONG_PRESS_MS, 1);
+    block.ringFg.style.strokeDashoffset = CIRCUMFERENCE * (1 - progress);
+    if (progress < 1) {
+      block._progressRaf = requestAnimationFrame(tick);
+    }
+  });
+}
+
+function stopProgress(block) {
+  cancelAnimationFrame(block._progressRaf);
+  block.ring.classList.remove('active');
+  // 重置进度
+  block.ringFg.style.transition = 'stroke-dashoffset 0.2s ease-out';
+  block.ringFg.style.strokeDashoffset = CIRCUMFERENCE;
+  setTimeout(() => {
+    block.ringFg.style.transition = 'stroke-dashoffset 0.05s linear';
+  }, 200);
+}
+
+function completeProgress(block) {
+  cancelAnimationFrame(block._progressRaf);
+  block.ring.classList.remove('active');
+  block.ringFg.style.strokeDashoffset = 0;
+  // 短暂显示满环后消失
+  setTimeout(() => {
+    block.ringFg.style.transition = 'stroke-dashoffset 0.2s ease-out';
+    block.ringFg.style.strokeDashoffset = CIRCUMFERENCE;
+    setTimeout(() => {
+      block.ringFg.style.transition = 'stroke-dashoffset 0.05s linear';
+    }, 200);
+  }, 150);
+}
+
+function getPos(e, block) {
+  const rect = block.getBoundingClientRect();
+  const touch = e.touches ? e.touches[0] : e;
+  return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+}
 
 function setupBlock(key) {
   const block = blocks[key];
   let clickTimer = null;
-  let longPressTimer = null;
+  let longPressFired = false;
   let clickCount = 0;
+  let lastPos = { x: 0, y: 0 };
 
   function resetTimers() {
     clearTimeout(clickTimer);
-    clearTimeout(longPressTimer);
     clickTimer = null;
     clickCount = 0;
   }
 
-  block.el.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    longPressTimer = setTimeout(() => {
-      // 长按：重置所有积分为0
+  function handleStart(e) {
+    longPressFired = false;
+    lastPos = getPos(e, block.el);
+    startProgress(block);
+
+    block._longPressTimeout = setTimeout(() => {
+      longPressFired = true;
+      completeProgress(block);
       blocks.blue.value = 0;
       blocks.red.value = 0;
       blocks.blue.scoreEl.textContent = '0';
       blocks.red.scoreEl.textContent = '0';
-      resetTimers();
+      animateReset(blocks.blue.el, blocks.blue.scoreEl);
+      animateReset(blocks.red.el, blocks.red.scoreEl);
+      // 双方都停止进度环
+      stopProgress(blocks.blue);
+      stopProgress(blocks.red);
     }, LONG_PRESS_MS);
+  }
+
+  function handleEnd(e) {
+    if (!longPressFired) {
+      stopProgress(block);
+    }
+    clearTimeout(block._longPressTimeout);
+
+    if (longPressFired) {
+      longPressFired = false;
+      return;
+    }
+
+    clickCount++;
+    if (clickCount === 1) {
+      clickTimer = setTimeout(() => {
+        block.value++;
+        block.scoreEl.textContent = block.value;
+        animateScoreUp(block.el, block.scoreEl, lastPos.x, lastPos.y);
+        clickCount = 0;
+      }, 250);
+    } else if (clickCount === 2) {
+      clearTimeout(clickTimer);
+      block.value = Math.max(0, block.value - 1);
+      block.scoreEl.textContent = block.value;
+      animateScoreDown(block.el, block.scoreEl, lastPos.x, lastPos.y);
+      clickCount = 0;
+    }
+  }
+
+  function handleCancel() {
+    if (!longPressFired) {
+      stopProgress(block);
+    }
+    clearTimeout(block._longPressTimeout);
+  }
+
+  // 触摸事件
+  block.el.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleStart(e);
   }, { passive: false });
 
   block.el.addEventListener('touchend', (e) => {
     e.preventDefault();
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-    }
-    clickCount++;
-    if (clickCount === 1) {
-      clickTimer = setTimeout(() => {
-        // 单击：+1
-        block.value++;
-        block.scoreEl.textContent = block.value;
-        clickCount = 0;
-      }, 250);
-    } else if (clickCount === 2) {
-      clearTimeout(clickTimer);
-      // 双击：-1
-      block.value = Math.max(0, block.value - 1);
-      block.scoreEl.textContent = block.value;
-      clickCount = 0;
-    }
+    handleEnd(e);
   }, { passive: false });
 
   block.el.addEventListener('touchmove', () => {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
+    handleCancel();
   });
 
   // 鼠标事件（桌面调试用）
-  block.el.addEventListener('mousedown', () => {
-    longPressTimer = setTimeout(() => {
-      blocks.blue.value = 0;
-      blocks.red.value = 0;
-      blocks.blue.scoreEl.textContent = '0';
-      blocks.red.scoreEl.textContent = '0';
-      resetTimers();
-    }, LONG_PRESS_MS);
+  block.el.addEventListener('mousedown', (e) => {
+    handleStart(e);
   });
 
-  block.el.addEventListener('mouseup', () => {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-    clickCount++;
-    if (clickCount === 1) {
-      clickTimer = setTimeout(() => {
-        block.value++;
-        block.scoreEl.textContent = block.value;
-        clickCount = 0;
-      }, 250);
-    } else if (clickCount === 2) {
-      clearTimeout(clickTimer);
-      block.value = Math.max(0, block.value - 1);
-      block.scoreEl.textContent = block.value;
-      clickCount = 0;
-    }
+  block.el.addEventListener('mouseup', (e) => {
+    lastPos = getPos(e, block.el);
+    handleEnd(e);
   });
 
   block.el.addEventListener('mouseleave', () => {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
+    handleCancel();
   });
 }
 
