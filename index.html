@@ -237,7 +237,10 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import { tiks } from 'https://esm.sh/@rexa-developer/tiks'
+tiks.init({ theme: 'crisp', volume: 0.4 })
+
 const CIRCUMFERENCE = 2 * Math.PI * 52; // ~326.73
 const LONG_PRESS_MS = 1500;
 const RING_DELAY_MS = 300;
@@ -247,75 +250,10 @@ const blocks = {
   red:  { el: document.getElementById('red'),  scoreEl: document.getElementById('redScore'),  value: 0 }
 };
 
-// 音效合成（iOS 需要在用户手势中解锁 AudioContext）
-let audioCtx = null;
-let audioUnlocked = false;
-
-function unlockAudio() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-  // iOS 需要播放一个静音 buffer 来完全解锁
-  if (!audioUnlocked) {
-    const buffer = audioCtx.createBuffer(1, 1, 22050);
-    const source = audioCtx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioCtx.destination);
-    source.start(0);
-    audioUnlocked = true;
-  }
-}
-
-function playSoundUp() {
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.08);
-  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-  osc.start(audioCtx.currentTime);
-  osc.stop(audioCtx.currentTime + 0.15);
-}
-
-function playSoundDown() {
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(660, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(330, audioCtx.currentTime + 0.15);
-  gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-  osc.start(audioCtx.currentTime);
-  osc.stop(audioCtx.currentTime + 0.2);
-}
-
-function playSoundReset() {
-  if (!audioCtx) return;
-  // 两声下降音，模拟重置
-  [0, 0.12].forEach((delay) => {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(1000, audioCtx.currentTime + delay);
-    osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + delay + 0.2);
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime + delay);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + 0.25);
-    osc.start(audioCtx.currentTime + delay);
-    osc.stop(audioCtx.currentTime + delay + 0.25);
-  });
-}
+// 音效（使用 tiks 库，自动处理 iOS AudioContext 解锁）
+function playSoundUp() { tiks.toggle(true) }
+function playSoundDown() { tiks.toggle(false) }
+function playSoundReset() { tiks.success() }
 
 // 获取进度环元素
 blocks.blue.ring = blocks.blue.el.querySelector('.progress-ring');
@@ -515,7 +453,6 @@ function setupBlock(key) {
   let startPos = { x: 0, y: 0 };
 
   function handleStart(e) {
-    unlockAudio();
     longPressFired = false;
     cancelled = false;
     pressStartTime = Date.now();
