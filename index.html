@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>记分板</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .scoreboard {
+    display: flex;
+    flex-direction: column;
+    width: 100%; height: 100%;
+  }
+  .score-block {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 0.1s;
+  }
+  .score-block:active {
+    opacity: 0.85;
+  }
+  .blue { background-color: #007AFF; }
+  .red  { background-color: #FF3B30; }
+  .score {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+    font-size: 72px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+</style>
+</head>
+<body>
+<div class="scoreboard">
+  <div class="score-block blue" id="blue">
+    <span class="score" id="blueScore">0</span>
+  </div>
+  <div class="score-block red" id="red">
+    <span class="score" id="redScore">0</span>
+  </div>
+</div>
+
+<script>
+const blocks = {
+  blue: { el: document.getElementById('blue'), scoreEl: document.getElementById('blueScore'), value: 0 },
+  red:  { el: document.getElementById('red'),  scoreEl: document.getElementById('redScore'),  value: 0 }
+};
+
+const LONG_PRESS_MS = 500;
+
+function setupBlock(key) {
+  const block = blocks[key];
+  let clickTimer = null;
+  let longPressTimer = null;
+  let clickCount = 0;
+
+  function resetTimers() {
+    clearTimeout(clickTimer);
+    clearTimeout(longPressTimer);
+    clickTimer = null;
+    clickCount = 0;
+  }
+
+  block.el.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    longPressTimer = setTimeout(() => {
+      // 长按：重置所有积分为0
+      blocks.blue.value = 0;
+      blocks.red.value = 0;
+      blocks.blue.scoreEl.textContent = '0';
+      blocks.red.scoreEl.textContent = '0';
+      resetTimers();
+    }, LONG_PRESS_MS);
+  }, { passive: false });
+
+  block.el.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+    clickCount++;
+    if (clickCount === 1) {
+      clickTimer = setTimeout(() => {
+        // 单击：+1
+        block.value++;
+        block.scoreEl.textContent = block.value;
+        clickCount = 0;
+      }, 250);
+    } else if (clickCount === 2) {
+      clearTimeout(clickTimer);
+      // 双击：-1
+      block.value = Math.max(0, block.value - 1);
+      block.scoreEl.textContent = block.value;
+      clickCount = 0;
+    }
+  }, { passive: false });
+
+  block.el.addEventListener('touchmove', () => {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  });
+
+  // 鼠标事件（桌面调试用）
+  block.el.addEventListener('mousedown', () => {
+    longPressTimer = setTimeout(() => {
+      blocks.blue.value = 0;
+      blocks.red.value = 0;
+      blocks.blue.scoreEl.textContent = '0';
+      blocks.red.scoreEl.textContent = '0';
+      resetTimers();
+    }, LONG_PRESS_MS);
+  });
+
+  block.el.addEventListener('mouseup', () => {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    clickCount++;
+    if (clickCount === 1) {
+      clickTimer = setTimeout(() => {
+        block.value++;
+        block.scoreEl.textContent = block.value;
+        clickCount = 0;
+      }, 250);
+    } else if (clickCount === 2) {
+      clearTimeout(clickTimer);
+      block.value = Math.max(0, block.value - 1);
+      block.scoreEl.textContent = block.value;
+      clickCount = 0;
+    }
+  });
+
+  block.el.addEventListener('mouseleave', () => {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  });
+}
+
+setupBlock('blue');
+setupBlock('red');
+</script>
+</body>
+</html>
