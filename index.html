@@ -228,7 +228,8 @@
 
 <script>
 const CIRCUMFERENCE = 2 * Math.PI * 52; // ~326.73
-const LONG_PRESS_MS = 800;
+const LONG_PRESS_MS = 1500;
+const RING_DELAY_MS = 500;
 
 const blocks = {
   blue: { el: document.getElementById('blue'), scoreEl: document.getElementById('blueScore'), value: 0 },
@@ -364,12 +365,13 @@ function animateReset(block, scoreEl) {
 
 // 进度环控制
 function startProgress(block) {
+  const ringDuration = LONG_PRESS_MS - RING_DELAY_MS;
   block.ring.classList.add('active');
   block.ringFg.style.strokeDashoffset = CIRCUMFERENCE;
   block._progressStart = Date.now();
   block._progressRaf = requestAnimationFrame(function tick() {
     const elapsed = Date.now() - block._progressStart;
-    const progress = Math.min(elapsed / LONG_PRESS_MS, 1);
+    const progress = Math.min(elapsed / ringDuration, 1);
     block.ringFg.style.strokeDashoffset = CIRCUMFERENCE * (1 - progress);
     if (progress < 1) {
       block._progressRaf = requestAnimationFrame(tick);
@@ -412,6 +414,8 @@ function setupBlock(key) {
   const block = blocks[key];
   let clickTimer = null;
   let longPressFired = false;
+  let cancelled = false;
+  let pressStartTime = 0;
   let clickCount = 0;
   let lastPos = { x: 0, y: 0 };
 
@@ -423,8 +427,14 @@ function setupBlock(key) {
 
   function handleStart(e) {
     longPressFired = false;
+    cancelled = false;
+    pressStartTime = Date.now();
     lastPos = getPos(e, block.el);
-    startProgress(block);
+
+    // 0.5秒后才开始显示进度环
+    block._ringDelayTimeout = setTimeout(() => {
+      startProgress(block);
+    }, RING_DELAY_MS);
 
     block._longPressTimeout = setTimeout(() => {
       longPressFired = true;
@@ -435,13 +445,13 @@ function setupBlock(key) {
       blocks.red.scoreEl.textContent = '0';
       animateReset(blocks.blue.el, blocks.blue.scoreEl);
       animateReset(blocks.red.el, blocks.red.scoreEl);
-      // 双方都停止进度环
       stopProgress(blocks.blue);
       stopProgress(blocks.red);
     }, LONG_PRESS_MS);
   }
 
   function handleEnd(e) {
+    clearTimeout(block._ringDelayTimeout);
     if (!longPressFired) {
       stopProgress(block);
     }
@@ -449,6 +459,17 @@ function setupBlock(key) {
 
     if (longPressFired) {
       longPressFired = false;
+      return;
+    }
+
+    // 已取消（手指滑出等），不触发点击
+    if (cancelled) {
+      cancelled = false;
+      return;
+    }
+
+    // 按住时间超过RING_DELAY_MS，视为长按取消，不触发点击
+    if (Date.now() - pressStartTime >= RING_DELAY_MS) {
       return;
     }
 
@@ -470,10 +491,14 @@ function setupBlock(key) {
   }
 
   function handleCancel() {
+    cancelled = true;
+    clearTimeout(block._ringDelayTimeout);
     if (!longPressFired) {
       stopProgress(block);
     }
     clearTimeout(block._longPressTimeout);
+    clickCount = 0;
+    clearTimeout(clickTimer);
   }
 
   // 触摸事件
