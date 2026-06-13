@@ -247,63 +247,73 @@ const blocks = {
   red:  { el: document.getElementById('red'),  scoreEl: document.getElementById('redScore'),  value: 0 }
 };
 
-// 音效合成（iOS 需要在用户手势中激活 AudioContext）
+// 音效合成（iOS 需要在用户手势中解锁 AudioContext）
 let audioCtx = null;
-function ensureAudioCtx() {
+let audioUnlocked = false;
+
+function unlockAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
-  return audioCtx;
+  // iOS 需要播放一个静音 buffer 来完全解锁
+  if (!audioUnlocked) {
+    const buffer = audioCtx.createBuffer(1, 1, 22050);
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    source.start(0);
+    audioUnlocked = true;
+  }
 }
 
 function playSoundUp() {
-  const ctx = ensureAudioCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
   osc.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(audioCtx.destination);
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(880, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.08);
-  gain.gain.setValueAtTime(0.3, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.15);
+  osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.08);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.15);
 }
 
 function playSoundDown() {
-  const ctx = ensureAudioCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
   osc.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(audioCtx.destination);
   osc.type = 'triangle';
-  osc.frequency.setValueAtTime(660, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + 0.15);
-  gain.gain.setValueAtTime(0.25, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.2);
+  osc.frequency.setValueAtTime(660, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(330, audioCtx.currentTime + 0.15);
+  gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.2);
 }
 
 function playSoundReset() {
-  const ctx = ensureAudioCtx();
+  if (!audioCtx) return;
   // 两声下降音，模拟重置
   [0, 0.12].forEach((delay) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(audioCtx.destination);
     osc.type = 'square';
-    osc.frequency.setValueAtTime(1000, ctx.currentTime + delay);
-    osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + delay + 0.2);
-    gain.gain.setValueAtTime(0.15, ctx.currentTime + delay);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + 0.25);
-    osc.start(ctx.currentTime + delay);
-    osc.stop(ctx.currentTime + delay + 0.25);
+    osc.frequency.setValueAtTime(1000, audioCtx.currentTime + delay);
+    osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + delay + 0.2);
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + 0.25);
+    osc.start(audioCtx.currentTime + delay);
+    osc.stop(audioCtx.currentTime + delay + 0.25);
   });
 }
 
@@ -503,6 +513,7 @@ function setupBlock(key) {
   }
 
   function handleStart(e) {
+    unlockAudio();
     longPressFired = false;
     cancelled = false;
     pressStartTime = Date.now();
