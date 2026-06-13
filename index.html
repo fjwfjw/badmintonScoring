@@ -512,12 +512,16 @@ function setupBlock(key) {
     clickCount = 0;
   }
 
+  let startPos = { x: 0, y: 0 };
+
   function handleStart(e) {
     unlockAudio();
     longPressFired = false;
     cancelled = false;
     pressStartTime = Date.now();
-    lastPos = getPos(e, block.el);
+    const pos = getPos(e, block.el);
+    lastPos = pos;
+    startPos = { x: pos.x, y: pos.y };
 
     // 延迟后显示两侧进度环（避免单击时闪现）
     block._ringDelayTimeout = setTimeout(() => {
@@ -604,8 +608,15 @@ function setupBlock(key) {
     handleEnd(e);
   }, { passive: false });
 
-  block.el.addEventListener('touchmove', () => {
-    handleCancel();
+  block.el.addEventListener('touchmove', (e) => {
+    const touch = e.touches[0];
+    const rect = block.el.getBoundingClientRect();
+    const dx = touch.clientX - rect.left - startPos.x;
+    const dy = touch.clientY - rect.top - startPos.y;
+    // 移动超过 20px 才取消长按
+    if (Math.sqrt(dx * dx + dy * dy) > 20) {
+      handleCancel();
+    }
   });
 
   // 鼠标事件（桌面调试用）
