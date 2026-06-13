@@ -229,7 +229,7 @@
 <script>
 const CIRCUMFERENCE = 2 * Math.PI * 52; // ~326.73
 const LONG_PRESS_MS = 1500;
-const RING_DELAY_MS = 500;
+const RING_DELAY_MS = 300;
 
 const blocks = {
   blue: { el: document.getElementById('blue'), scoreEl: document.getElementById('blueScore'), value: 0 },
@@ -379,6 +379,12 @@ function startProgress(block) {
   });
 }
 
+// 同时启动两侧进度环
+function startBothProgress() {
+  startProgress(blocks.blue);
+  startProgress(blocks.red);
+}
+
 function stopProgress(block) {
   cancelAnimationFrame(block._progressRaf);
   block.ring.classList.remove('active');
@@ -431,29 +437,29 @@ function setupBlock(key) {
     pressStartTime = Date.now();
     lastPos = getPos(e, block.el);
 
-    // 0.5秒后才开始显示进度环
+    // 延迟后显示两侧进度环（避免单击时闪现）
     block._ringDelayTimeout = setTimeout(() => {
-      startProgress(block);
+      startBothProgress();
     }, RING_DELAY_MS);
 
     block._longPressTimeout = setTimeout(() => {
       longPressFired = true;
-      completeProgress(block);
+      completeProgress(blocks.blue);
+      completeProgress(blocks.red);
       blocks.blue.value = 0;
       blocks.red.value = 0;
       blocks.blue.scoreEl.textContent = '0';
       blocks.red.scoreEl.textContent = '0';
       animateReset(blocks.blue.el, blocks.blue.scoreEl);
       animateReset(blocks.red.el, blocks.red.scoreEl);
-      stopProgress(blocks.blue);
-      stopProgress(blocks.red);
     }, LONG_PRESS_MS);
   }
 
   function handleEnd(e) {
     clearTimeout(block._ringDelayTimeout);
     if (!longPressFired) {
-      stopProgress(block);
+      stopProgress(blocks.blue);
+      stopProgress(blocks.red);
     }
     clearTimeout(block._longPressTimeout);
 
@@ -468,7 +474,7 @@ function setupBlock(key) {
       return;
     }
 
-    // 按住时间超过RING_DELAY_MS，视为长按取消，不触发点击
+    // 按住时间超过延迟阈值，视为长按取消，不触发点击
     if (Date.now() - pressStartTime >= RING_DELAY_MS) {
       return;
     }
@@ -494,7 +500,8 @@ function setupBlock(key) {
     cancelled = true;
     clearTimeout(block._ringDelayTimeout);
     if (!longPressFired) {
-      stopProgress(block);
+      stopProgress(blocks.blue);
+      stopProgress(blocks.red);
     }
     clearTimeout(block._longPressTimeout);
     clickCount = 0;
