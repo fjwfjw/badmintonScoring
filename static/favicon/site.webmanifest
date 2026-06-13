@@ -1,0 +1,21 @@
+{
+  "name": "计分板",
+  "short_name": "计分板",
+  "description": "羽毛球计分板",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#007AFF",
+  "theme_color": "#007AFF",
+  "icons": [
+    {
+      "src": "/static/favicon/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/static/favicon/apple-touch-icon-180x180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
